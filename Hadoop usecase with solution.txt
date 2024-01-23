@@ -1,0 +1,234 @@
+HDFS Usecase:
+
+1. Create a new directory in linux namely ~/install/hdfsusecases and create a new file inside the above directory
+namely ~/install/hdfsusecases/NYSE_2020_06_20.txt copying the first 1000 lines from an existing file
+~/pigdata/NYSE_daily
+
+Ans:
+[hduser@localhost ~]$ mkdir ~/install/hdfsusecases
+
+[hduser@localhost ~]$ head -1000 ~/pigdata/NYSE_daily > ~/install/hdfsusecases/NYSE_2020_06_20.txt
+
+cd ~/install/hdfsusecases
+[hduser@localhost hdfsusecases]$ ls -lrt
+
+2. Create another new file inside the above directory namely ~/install/hdfsusecases/NYSE_2020_06_21.txt copying 
+the line from 1001 to 2000 from an existing file ~/pigdata/NYSE_daily.
+
+Ans:
+[hduser@localhost ~]$ sed -n -e '1001,2000p' ~/pigdata/NYSE_daily > ~/install/hdfsusecases/NYSE_2020_06_21.txt
+[hduser@localhost ~]$ cd ~/install/hdfsusecases
+
+3. Create a directory in Hadoop namely /tmp/hdfsusecases
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -mkdir /tmp/hdfsusecases
+
+4. Check whether the above directory is created in HDFS or not using the below command (Note: We use –test –d 
+option to check whether the given path is a directory or not).
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -test -d /tmp/hdfsusecases
+
+5. Check what is the status code of the above command using, if it shows 0 then directory is created, if shows non 
+zero then the directory is not created then check the step 3 again.
+
+Ans:
+[hduser@localhost ~]$ echo $?
+0
+
+6. Copy file generated only in step 1 (~/install/hdfsusecases/NYSE_2020_06_20.txt) from linux to hdfs directory 
+/tmp/hdfsusecases in the name of NYSE_2020_06.txt.
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -put ~/install/hdfsusecases/NYSE_2020_06_20.txt /tmp/hdfsusecases/NYSE_2020_06.txt
+
+[hduser@localhost ~]$ hadoop fs -ls -R /tmp/hdfsusecases/
+
+-rw-r--r--   1 hduser supergroup      57446 2023-12-24 10:47 /tmp/hdfsusecases/NYSE_2020_06.txt
+
+7. Like step 4 and 5, check whether the above file (/tmp/hdfsusecases/NYSE_2020_06.txt) is created or not in HDFS,
+using -f option and check for the status code using $? and create a zero byte file in HDFS directory 
+/tmp/hdfsusecases in the name of _SUCCESS.
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -test -f /tmp/hdfsusecases/NYSE_2020_06.txt
+
+[hduser@localhost ~]$ echo $?
+0
+
+[hduser@localhost ~]$ hadoop fs -touchz /tmp/hdfsusecases/_SUCCESS
+
+[hduser@localhost ~]$ hadoop fs -ls /tmp/hdfsusecases
+Found 2 items
+-rw-r--r--   1 hduser supergroup      57446 2023-12-24 10:47 /tmp/hdfsusecases/NYSE_2020_06.txt
+-rw-r--r--   1 hduser supergroup          0 2023-12-24 10:52 /tmp/hdfsusecases/_SUCCESS
+
+8. Append the file generated in step 2 in linux (~/install/hdfsusecases/NYSE_2020_06_20.txt) with the file generated 
+in step 6 in the hdfs directory /tmp/hdfsusecases/NYSE_2020_06.txt.
+
+Ans:
+hadoop fs -appendToFile <local_file> <hdfs_file>
+
+[hduser@localhost ~]$ hadoop fs -appendToFile ~/install/hdfsusecases/NYSE_2020_06_20.txt /tmp/hdfsusecases/NYSE_2020_06.txt
+
+9. Count the size of the file in HDFS /tmp/hdfsusecases/NYSE_2020_06.txt.
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -cat /tmp/hdfsusecases/NYSE_2020_06.txt | wc -l
+--2000
+
+[hduser@localhost ~]$ hdfs dfs -count -h  /tmp/hdfsusecases/NYSE_2020_06.txt
+O/P:    0            1            112.1 K /tmp/hdfsusecases/NYSE_2020_06.txt
+folders, files, size 
+
+10. Count the number of rows are there in the /tmp/hdfsusecases/NYSE_2020_06.txt (Which should show the total 
+count of the files created in step1 and 2).
+
+Ans:
+[hduser@localhost ~]$ hdfs dfs -cat /tmp/hdfsusecases/NYSE_2020_06.txt | wc -l
+
+11. Display only line 11 to 20 from the file in HDFS /tmp/hdfsusecases/NYSE_2020_06.txt
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -cat /tmp/hdfsusecases/NYSE_2020_06.txt |head -20 | tail -10
+
+hadoop fs -cat /tmp/hdfsusecases/NYSE_2020_06.txt | sed -n -e '11,20p'
+
+12. Store line 11 to 20 from the file in HDFS /tmp/hdfsusecases/NYSE_2020_06.txt into linux file namely 
+~/install/hdfsusecases/NYSE_sampledata1.txt#
+
+Ans:
+hadoop fs -cat /tmp/hdfsusecases/NYSE_2020_06.txt |head -20 | tail -10 > ~/install/hdfsusecases/NYSE_sampledata1.txt
+23/12/24 11:16:08 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+cat: Unable to write to output stream.
+
+[hduser@localhost ~]$ cat ~/install/hdfsusecases/NYSE_sampledata1.txt
+
+13. Delete the line number 1 from the HDFS file /tmp/hdfsusecases/NYSE_2020_06.txt , for example if the above file 
+contains 100 rows, after deletion it should have only 99 rows in HDFS
+Note: we can’t do this directly because of the WORM property of HDFS data, think about the possible work 
+around and try to achive the result.
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -cat /tmp/hdfsusecases/NYSE_2020_06.txt > /home/hduser/NYSE_2020_06.txt
+
+[hduser@localhost ~]$ sed -i -e '1d' /home/hduser/NYSE_2020_06.txt 
+[hduser@localhost ~]$  wc -l NYSE_2020_06.txt 
+1999 NYSE_2020_06.txt
+
+
+[hduser@localhost ~]$ hadoop fs -rm /tmp/hdfsusecases/NYSE_2020_06.txt
+
+23/12/24 11:30:36 INFO fs.TrashPolicyDefault: Namenode trash configuration: Deletion interval = 0 minutes, Emptier interval = 0 minutes.
+Deleted /tmp/hdfsusecases/NYSE_2020_06.txt
+
+[hduser@localhost ~]$ hadoop fs -put /home/hduser/NYSE_2020_06.txt /tmp/hdfsusecases/NYSE_2020_06.txt
+
+[hduser@localhost ~]$ hadoop fs -cat /tmp/hdfsusecases/NYSE_2020_06.txt | wc -l
+23/12/24 11:33:47 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+1999
+
+ans:hadoop fs -cat /tmp/hdfsusecases/NYSE_2020_06.txt | sed '1d' | hdfs dfs -put -f - /tmp/hdfsusecases/NYSE_2020_06.txt
+
+
+14. Copy the above file /tmp/hdfsusecases/NYSE_2020_06.txt in the name of 
+/tmp/hdfsusecases/NYSE_2020_06_bkp.txt.
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -cp /tmp/hdfsusecases/NYSE_2020_06.txt /tmp/hdfsusecases/NYSE_2020_06_bkp.txt
+
+23/12/24 11:35:15 WARN hdfs.DFSClient: DFSInputStream has been closed already
+
+[hduser@localhost ~]$ hadoop fs -ls /tmp/hdfsusecases/
+23/12/24 11:36:01 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Found 3 items
+-rw-r--r--   1 hduser supergroup     114835 2023-12-24 11:30 /tmp/hdfsusecases/NYSE_2020_06.txt
+-rw-r--r--   1 hduser supergroup     114835 2023-12-24 11:35 /tmp/hdfsusecases/NYSE_2020_06_bkp.txt
+-rw-r--r--   1 hduser supergroup          0 2023-12-24 10:52 /tmp/hdfsusecases/_SUCCESS
+
+
+15. Merge the files in HDFS /tmp/hdfsusecases/NYSE_2020_06.txt and /tmp/hdfsusecases/NYSE_2020_06_bkp.txt 
+into Linux directory namely ~/install/hdfsusecases/NYSE_2020_06_merged.txt
+Note: We have to use the option called -getmerge to achieve this as given below
+
+Ans:
+[hduser@localhost ~]$ hadoop fs -getmerge /tmp/hdfsusecases/NYSE*  ~/install/hdfsusecases/NYSE_2020_06_merged.txt
+ 
+[hduser@localhost ~]$ ls  ~/install/hdfsusecases/NYSE_2020_06_merged.txt
+/home/hduser/install/hdfsusecases/NYSE_2020_06_merged.txt
+
+[hduser@localhost ~]$ wc -l  ~/install/hdfsusecases/NYSE_2020_06_merged.txt
+3998 /home/hduser/install/hdfsusecases/NYSE_2020_06_merged.txt
+
+ans: 
+hadoop fs -getmerge /tmp/hdfsusecases/NYSE_2020_06.txt /tmp/hdfsusecases/NYSE_2020_06_bkp.txt  ~/install/hdfsusecases/NYSE_2020_06_merged.txt
+
+16. Set the blocksize 64MB while writing the file in HDFS, check in the UI how many blocks are generated.
+
+Ans:
+[hduser@localhost ~]$ hdfs dfs -Ddfs.blocksize=64M -put /home/hduser/NYSE_2020_06.txt /tmp/hdfsusecases/NYSE_2020_06.txt
+
+In UI - 	64 MB	-- NYSE_2020_06.txt
+
+17. Set the blocksize 128MB (134217728) for the same file generated in step 16 and replace the existing file in HDFS.
+
+Ans:
+[hduser@localhost ~]$ hdfs dfs -Ddfs.blocksize=128M -put -f /home/hduser/NYSE_2020_06.txt /tmp/hdfsusecases/NYSE_2020_06.txt
+
+IN UI - 128 MB -	NYSE_2020_06.txt
+
+18. Set the replication to 3 while writing the file in HDFS.
+
+Ans:
+Before in UI - 1 replica - 	128 MB - 	NYSE_2020_06.txt
+
+[hduser@localhost ~]$ hdfs dfs -Ddfs.replicatio=3 -put -f /home/hduser/NYSE_2020_06.txt /tmp/hdfsusecases/NYSE_2020_06.txt
+
+After IN UI - 3	 replica - 128 MB  -	NYSE_2020_06.txt
+
+19. To check the block information (In which datanode block is present,no of blocks,size,replication, etc).
+
+Ans:
+[hduser@localhost ~]$ hdfs fsck /tmp/hdfsusecases/NYSE_2020_06.txt
+
+20. Important Command DistCp (distributed copy) is a tool used for copying data between one Hadoop cluster to 
+another cluster or with in the same cluster using mappers. (Interview Question – how do you copy data from 
+production Hadoop cluster to Dev Hadoop cluster).
+ 
+Ans:
+[hduser@localhost ~]$ hadoop distcp /tmp/hdfsusecases/NYSE_2020_06.txt /tmp
+
+Distributed copy (DistCp) is a Hadoop utility used to copy data in parallel within and between clusters. 
+It uses Hadoop's MapReduce to perform the copy operation. 
+DistCp is the most widely used data transfer tool in Hadoop clusters.
+
+Syntax: hadoop distcp <source> <destination>
+
+For example, to copy data from one cluster to another, you can use:
+
+hadoop distcp hdfs://namenode1/src hdfs://namenode2/dest
+
+21. choose to overwrite the target files unconditionally even if it exists using upto 2 mappers depends 
+hadoopdistcp -overwrite -m 2 /tmp/hdfsusecases/NYSE_2020_06.txt /user/hduser/
+
+22. To view the content of editlog file, need to convert into xml file using editlog viewer 
+hdfsoev -i edits_inprogress_0000000000000009315 -o edittest.xml
+cd /usr/local/hadoop_store/hdfs/namenode/current/
+ls -l
+hdfsoev -i edits_inprogress_0000000000000001183 -o edittest.xml
+cat edittest.xml
+hdfsoev -i edits_0000000000000001070-0000000000000001182 -o edittest1.xml -p XML
+cat edittest1.xml
+--------------------------------
+
+touch file creation:
+if [ $? -eq 0 ]
+then
+echo "creating file"
+hdfs dfs =touchz /tmp/hdfs/ -Succsess
+echo $?
+echo "file craeted"
+fi
+
+
